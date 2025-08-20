@@ -76,7 +76,7 @@ export default class ResourceRepository implements IRepository<IResource> {
       .execute()  
       for (const x of rows) {
         const base = x.linkAnchor || x.linkId || x.resourceId
-        const fileName = `${base}?ct=${x.type}.${extension(x.type)}`
+        const fileName = `${base}?ct=${x.type}.${extension(x.type)}`.replace(/[\/\\:*"<>|]/g, '_')
 
         yield {
           blob: new File([x.bytes], fileName, { type: x.type }),
