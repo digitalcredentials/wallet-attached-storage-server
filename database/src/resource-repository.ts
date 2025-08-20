@@ -73,22 +73,19 @@ export default class ResourceRepository implements IRepository<IResource> {
       ])
       .where('spaceNamedResource.spaceId', '=', query.space)
       .orderBy('resourceRepresentation.createdAt', 'desc')
-      .execute()
+      .execute()  
+      for (const x of rows) {
+        const base = x.linkAnchor || x.linkId || x.resourceId
+        const ct = new URLSearchParams({ ct: x.type }).toString()
+        const fileName = `${base}?${ct}.${extension(x.type)}`
 
-    for (const x of rows) {
-      let base = `${x.linkId || x.linkAnchor || x.resourceId}_${x.type}`
-      // sanitize for filesystem
-      base = base.replace(/[\/\\:*?"<>|]/g, '_')
-      // derive extension from MIME type
-      const ext = extension(x.type)
-      if (!base.endsWith(`.${ext}`)) base = `${base}.${ext}`
-
-      yield {
-        blob: new File([x.bytes], base, { type: x.type }),
-        createdAt: x.createdAt,
+        yield {
+          blob: new File([x.bytes], fileName, { type: x.type }),
+          createdAt: x.createdAt,
+        }
       }
-    }
   }
+  
 
   async create(input: Insertable<IResource> & { representation?: Blob }) {
     try {
