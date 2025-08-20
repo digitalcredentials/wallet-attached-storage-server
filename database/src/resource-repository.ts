@@ -76,8 +76,7 @@ export default class ResourceRepository implements IRepository<IResource> {
       .execute()  
       for (const x of rows) {
         const base = x.linkAnchor || x.linkId || x.resourceId
-        const ct = new URLSearchParams({ ct: x.type }).toString()
-        const fileName = `${base}?${ct}.${extension(x.type)}`
+        const fileName = `${base}?ct=${x.type}.${extension(x.type)}`
 
         yield {
           blob: new File([x.bytes], fileName, { type: x.type }),
