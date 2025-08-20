@@ -1,6 +1,7 @@
 import type { Insertable, QueryCreator } from "kysely"
 import type { DatabaseTables, IRepository, IResource } from "./types"
 import { map } from "streaming-iterables"
+import { extension } from "mime-types"
 
 export default class ResourceRepository implements IRepository<IResource> {
   #database: QueryCreator<DatabaseTables>
@@ -55,6 +56,40 @@ export default class ResourceRepository implements IRepository<IResource> {
       }),
       resultOfSelectRepresentations)
   }
+  async * iterateSpaceRepresentationsWithLinks(query: { space: string }) {
+    const rows = await this.#database
+      .selectFrom('resourceRepresentation')
+      .innerJoin('spaceNamedResource', 'spaceNamedResource.resourceId', 'resourceRepresentation.resourceId')
+      .innerJoin('blob', 'blob.uuid', 'resourceRepresentation.representationId')
+      .leftJoin('link', 'link.anchor', 'resourceRepresentation.resourceId')
+      .select([
+        'blob.bytes',
+        'blob.type',
+        'resourceRepresentation.createdAt',
+        'spaceNamedResource.spaceId as space',
+        'resourceRepresentation.resourceId as resourceId',
+        'link.anchor as linkAnchor',
+        'link.uuid as linkId',
+      ])
+      .where('spaceNamedResource.spaceId', '=', query.space)
+      .orderBy('resourceRepresentation.createdAt', 'desc')
+      .execute()
+
+    for (const x of rows) {
+      let base = `${x.linkId || x.linkAnchor || x.resourceId}_${x.type}`
+      // sanitize for filesystem
+      base = base.replace(/[\/\\:*?"<>|]/g, '_')
+      // derive extension from MIME type
+      const ext = extension(x.type)
+      if (!base.endsWith(`.${ext}`)) base = `${base}.${ext}`
+
+      yield {
+        blob: new File([x.bytes], base, { type: x.type }),
+        createdAt: x.createdAt,
+      }
+    }
+  }
+
   async create(input: Insertable<IResource> & { representation?: Blob }) {
     try {
       await this.#database.insertInto('resource')

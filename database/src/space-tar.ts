@@ -4,7 +4,7 @@ import { Readable, Writable } from 'stream'
 import { blob } from 'stream/consumers'
 
 export async function exportSpaceTar(
-  resources: Pick<ResourceRepository, 'iterateSpaceNamedRepresentations'>,
+  resources: Pick<ResourceRepository, 'iterateSpaceRepresentationsWithLinks'>,
   spaceUuid: string
 ): Promise<ReadableStream> {
   const pack = tar.pack()
@@ -12,15 +12,13 @@ export async function exportSpaceTar(
   // pack should contain a directory named after the space uuid
   pack.entry({ name: spaceUuid, type: 'directory', })
 
-  const repsInSpace = resources.iterateSpaceNamedRepresentations({
+  const repsInSpace = resources.iterateSpaceRepresentationsWithLinks({
     space: spaceUuid,
   })
 
   // create entry files for each resource in space
   for await (const rep of repsInSpace) {
-    const searchParams = rep.blob.type ? new URLSearchParams({ ct: rep.blob.type.toLowerCase() }) : undefined
-    const fileName = `${rep.blob.name}${searchParams ? `?${searchParams}` : ''}`
-    const tarEntryName = `${spaceUuid}/${encodeURIComponent(fileName)}`
+    const tarEntryName = `${spaceUuid}/${rep.blob.name}`
     pack.entry(
       { name: tarEntryName },
       // @todo dont load whole blob into memory

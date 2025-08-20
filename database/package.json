@@ -9,9 +9,11 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
+    "@types/mime-types": "^3.0.1",
     "@types/tar-stream": "^3.1.4",
     "kysely": "^0.28.2",
     "kysely-plugin-serialize": "^0.8.2",
+    "mime-types": "^3.0.1",
     "streaming-iterables": "^8.0.1"
   },
   "engines": {},
