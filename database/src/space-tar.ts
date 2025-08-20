@@ -41,7 +41,7 @@ export function readFilesFromTar(stream: ReadableStream) {
             case 'file':
               const name = header.name
               const nameParts = name.split('?')
-              const entryFileNameCt = nameParts[1].split('=')[1].split('.')[0]
+              const entryFileNameCt = nameParts[1].split('=')[1].split('.')[0].replace('_', '/')
               controller.enqueue(new File([await blob.arrayBuffer()], header.name, { type: entryFileNameCt }))
               break;
             case 'directory':
