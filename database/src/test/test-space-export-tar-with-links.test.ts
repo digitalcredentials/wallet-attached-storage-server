@@ -3,9 +3,14 @@ import assert from 'assert'
 import { createDatabaseFromSqlite3Url } from '../sqlite3/database-url-sqlite3.ts'
 import { initializeDatabaseSchema } from '../schema.ts'
 import SpaceRepository from '../space-repository.ts'
-import ResourceRepository from '../resource-repository.ts'
+import ResourceRepository, { makeSafeFileName } from '../resource-repository.ts'
 import type { Database, ISpace } from '../types.ts'
 import { collect } from 'streaming-iterables'
+
+test('makeSafeFileName encodes base and ct safely', () => {
+  const fn = makeSafeFileName('abc/123', 'text/plain')
+  assert.match(fn, /^abc%2F123%3Fct%3Dtext%2Fplain\.txt$/)
+})
 
 await test(`iterateSpaceRepresentationsWithLinks yields files with credential id filenames`, async t => {
   // setup db

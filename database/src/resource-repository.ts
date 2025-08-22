@@ -76,7 +76,7 @@ export default class ResourceRepository implements IRepository<IResource> {
       .execute()  
       for (const x of rows) {
         const base = x.linkAnchor || x.linkId || x.resourceId
-        const fileName = `${base}?ct=${x.type}.${extension(x.type)}`.replace(/[\/\\:*"<>|]/g, '_')
+        const fileName = makeSafeFileName(base, x.type)
 
         yield {
           blob: new File([x.bytes], fileName, { type: x.type }),
@@ -167,6 +167,11 @@ export default class ResourceRepository implements IRepository<IResource> {
     const spaces = await this.#database.selectFrom('resource').selectAll().execute()
     return spaces
   }
+}
+
+export function makeSafeFileName(base: string, mime: string): string {
+  const ext = extension(mime)
+  return encodeURIComponent(`${base}?ct=${mime}`) + `.${ext}`
 }
 
 function parseUrnUuidUriToSpaceName(uri: `urn:uuid:${string}${string}`) {
