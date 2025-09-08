@@ -30,6 +30,9 @@ export function authorizeWithSpace(options: {
   onSpaceNotFound?: (error: SpaceNotFound) => void,
   allowWhenSpaceNotFound?: boolean,
 }) {
+  const always = (o: { space: ISpace }) => async (request: Request) => {
+    return true
+  }
   // No space controller
   const withNoSpaceController = (o: { space: ISpace }) => async (request: Request) => {
     try {
@@ -82,10 +85,11 @@ export function authorizeWithSpace(options: {
       throw error
     }
     return authorizeWithAnyOf(
+      always({ space }),
       withNoSpaceController({ space }),
       withHttpSignature({ space }),
       withZcap({ space }),
-      withAcl({ space }),
+      withAcl({ space })
     )(c, next)
   }
 }
