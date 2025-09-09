@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@did.coop/did-key-ed25519": "github:did-coop/did-key-ed25519",
+    "@digitalcredentials/ed25519-signature-2020": "^7.0.0",
     "@hono/zod-validator": "^0.5.0",
     "@types/negotiator": "^0.6.3",
     "@wallet.storage/fetch-client": "^1.2.0",
