@@ -66,7 +66,7 @@ export function authorizeWithSpace(options: {
     })
   }
   // ACL
-  const withAcl = (o: { space: ISpace }) => (request) => authorizeRequestWithSpaceAcl(request, {
+  const withAcl = (o: { space: ISpace }) => (request: Request) => authorizeRequestWithSpaceAcl(request, {
     ...options,
     space: async () => o.space,
   })
