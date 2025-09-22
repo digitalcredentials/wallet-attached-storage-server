@@ -32,7 +32,7 @@ async function mockVerifyCapabilityInvocation(
   u.protocol = 'https:';
   const normalizedUrl = u.toString();
 
-  const rt = new URL(options.expectedTarget);
+  const expectedTarget = new URL(options.expectedTarget);
   rt.protocol = 'https:'; // should already be https
   // no trailing slash on root
   if (rt.pathname.endsWith('/')) rt.pathname = rt.pathname.slice(0, -1);
