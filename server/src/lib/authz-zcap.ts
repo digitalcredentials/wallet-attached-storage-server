@@ -28,17 +28,21 @@ async function mockVerifyCapabilityInvocation(
     expectedAction?: string;
   }
 ) {
-  const u = new URL(request.url);
-  u.protocol = 'https:';
-  const normalizedUrl = u.toString();
+  const url = new URL(request.url);
+  url.protocol = 'https:';
+  const normalizedUrl = url.toString();
 
   const expectedTarget = new URL(options.expectedTarget);
-  rt.protocol = 'https:'; // should already be https
+  expectedTarget.protocol = 'https:'; // should already be https
   // no trailing slash on root
-  if (rt.pathname.endsWith('/')) rt.pathname = rt.pathname.slice(0, -1);
-  const spaceRoot = rt.toString();
+  if (expectedTarget.pathname.endsWith('/')) expectedTarget.pathname = expectedTarget.pathname.slice(0, -1);
+  const spaceRoot = expectedTarget.toString();
 
   const expectedAction = options.expectedAction || request.method;
+  if (expectedAction !== request.method) {
+    throw new Error(`Expected action ${expectedAction}, got ${request.method}`);
+  }
+
   const verification = await dbVerifyCapabilityInvocation({
     url: normalizedUrl,
     method: request.method,
@@ -52,9 +56,9 @@ async function mockVerifyCapabilityInvocation(
     expectedAction,
     expectedTarget: normalizedUrl,  // strict target → will fail on child
     expectedRootCapability: options.expectedRootCapability,
-    expectedHost: request.headers.get('host') ?? undefined,
+    expectedHost: request.headers.get('host'),
   });
-
+  
   if (verification.verified === true) {
     return { verified: true };
   }
@@ -68,23 +72,20 @@ async function mockVerifyCapabilityInvocation(
     // same origin?
     const requestUrl = new URL(normalizedUrl);
     const rootUrl = new URL(spaceRoot);
-    const sameOrigin = reqU.origin === rootU.origin;
+    const sameOrigin = requestUrl.origin === rootUrl.origin;
 
     // path boundary check:
     // allow exact root (/space/:uuid) OR a child (/space/:uuid/...)
-    const isAtRoot = reqU.pathname === rootU.pathname;
+    const isAtRoot = requestUrl.pathname === rootUrl.pathname;
     const isUnderRoot =
-      reqU.pathname.startsWith(rootU.pathname.endsWith('/')
-        ? rootU.pathname
-        : rootU.pathname + '/');
+      requestUrl.pathname.startsWith(rootUrl.pathname.endsWith('/')
+        ? rootUrl.pathname
+        : rootUrl.pathname + '/');
 
     if (!(sameOrigin && (isAtRoot || isUnderRoot))) {
       throw new Error(
         `Invocation target (${normalizedUrl}) is not under space root (${spaceRoot})`
       );
-    }
-    if (expectedAction !== request.method) {
-      throw new Error(`Expected action ${expectedAction}, got ${request.method}`);
     }
     return { verified: true, relaxedChildOfSpace: true };
   }
@@ -153,28 +154,27 @@ export default async function authorizeWithZcap(
     });
 
   let hasProvenSufficientAuthorization = false;
+  
+  if (!request.headers.has("capability-invocation")) {
+    console.warn('No capability-invocation header found, returning false')
+    return false;
+  }
+  try {
+    const spaceRoot = getSpaceRootUrl(request.url);
 
-  if (request.headers.has("capability-invocation")) {
-    try {
-      // normalize request URL to https
-      const assumedInvocationTarget = urlWithProtocol(request.url, "https:");
-      // extract just the space root (ignore file paths under it)
-      const spaceRoot = getSpaceRootUrl(assumedInvocationTarget.toString());
-
-      const result = await mockVerifyCapabilityInvocation(request, {
-        expectedTarget: options.expectedTarget ?? spaceRoot,
-        expectedAction: options.expectedAction ?? request.method,
-        expectedRootCapability:
-          options.expectedRootCapability ??
-          `urn:zcap:root:${encodeURIComponent(spaceRoot)}`,
-        documentLoader,
-      });
-      hasProvenSufficientAuthorization = true;
-    } catch (error) {
-      console.debug('Error while verifying capability invocation:', error)
-      options.onVerificationError?.(error);
-      return false;
-    }
+    const result = await mockVerifyCapabilityInvocation(request, {
+      expectedTarget: options.expectedTarget ?? spaceRoot,
+      expectedAction: options.expectedAction ?? request.method,
+      expectedRootCapability:
+        options.expectedRootCapability ??
+        `urn:zcap:root:${encodeURIComponent(spaceRoot)}`,
+      documentLoader,
+    });
+    hasProvenSufficientAuthorization = true;
+  } catch (error) {
+    console.debug('Error while verifying capability invocation:', error)
+    options.onVerificationError?.(error);
+    return false;
   }
 
   return hasProvenSufficientAuthorization;
