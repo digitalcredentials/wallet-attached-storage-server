@@ -50,7 +50,7 @@ async function mockVerifyCapabilityInvocation(
     },
     documentLoader: options.documentLoader,
     expectedAction,
-    expectedTarget: normalizedUrl,                     // strict target → will fail on child
+    expectedTarget: normalizedUrl,  // strict target → will fail on child
     expectedRootCapability: options.expectedRootCapability,
     expectedHost: request.headers.get('host') ?? undefined,
   });
