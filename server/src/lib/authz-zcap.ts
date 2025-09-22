@@ -67,7 +67,7 @@ async function mockVerifyCapabilityInvocation(
   if (onlyMismatch) {
     // same origin?
     const requestUrl = new URL(normalizedUrl);
-    const rootU = new URL(spaceRoot);
+    const rootUrl = new URL(spaceRoot);
     const sameOrigin = reqU.origin === rootU.origin;
 
     // path boundary check:
