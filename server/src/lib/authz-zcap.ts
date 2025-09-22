@@ -66,7 +66,7 @@ async function mockVerifyCapabilityInvocation(
 
   if (onlyMismatch) {
     // same origin?
-    const reqU = new URL(normalizedUrl);
+    const requestUrl = new URL(normalizedUrl);
     const rootU = new URL(spaceRoot);
     const sameOrigin = reqU.origin === rootU.origin;
 
